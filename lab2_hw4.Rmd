@@ -130,6 +130,7 @@ geom_bar(position = 'fill',stat = "identity", aes(color = I('black')), size = 0.
 From the graph above, we can see that USA, CANADA and FRANCE chocolate companies do not have any Elite level(rate = 5). On the other hand, France companies has highest "Premium" rate among 3 countries but also the only country has the "Unpleasant" percentage of rate. These are main ratings compare that I focus on from the graph.
 
 > __Own Question__: 
+
 - Answer
 - graph
 - Workflow
