@@ -8,23 +8,129 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+```{r load-packages, include=FALSE}
+library(dplyr)
+library(magrittr)
+library(knitr)
+library(tidyverse)
+library(ggplot2)
+library(ggthemes)
+```
+```{r}
+df <- read.csv("https://ds202-at-isu.github.io/labs/data/choco.csv")
+summary(df)
+```
+> __Question set 1__: 
+1. What is the overall number of chocolate bars rated?
 
-## R Markdown
+Answer: From the summary, there are 1852 rows means there are 1852 chocolate bars were rated.
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+> 2. How does the number of ratings depend on the year? Draw a bar chart of the number of reports.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+Answer: The number of ratings tend to increase from 2006 to 2015 and observable decrease after 2015. In 2017, the number of ratings was as low as in 2007.
 
-```{r cars}
-summary(cars)
+```{r}
+df %>% ggplot(aes(x= as.factor(Review.Date))) +geom_bar()
 ```
 
-## Including Plots
+> __Question set 2__: 
+1. How are ratings distributed? Draw a histogram of ratings and describe it. Don’t forget to mention outliers, if there are any.
 
-You can also embed plots, for example:
+```{r}
+#Summary statistic of rating
+summary(df$Rating)
+```
+Answer: I'm using the mean and standard deviation of rating by year to show Ratings' distribution. As we can see from the table below, 2017 has the highest average rating of 3.34, on the other hand, 2008 has the lowest rating of 2.99. 
+```{r}
+#mean of rating adn sd of rating
+df %>% summarise(averageRating = mean(Rating),sdRating = sd(Rating))
 
-```{r pressure, echo=FALSE}
-plot(pressure)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+df %>% group_by(Review.Date) %>% summarise(averageRating = mean(Rating), sdRating = sd(Rating))
+```
+
+```{r, include = TRUE}
+
+df %>% ggplot(aes(x= (Rating))) +geom_bar()
+```
+
+```{r, include = TRUE}
+#Detect outliers with boxplot
+# I use the mtext function to print out the outliers
+out <- boxplot.stats(df$Rating)$out
+boxplot(df$Rating,
+  ylab = "Count"
+)
+mtext(paste("Outliers: ", paste(out, collapse = ", ")))
+```
+
+Describe the graph: The graph is lelf-skewed with outliers. The mean of Rating is 3.191. There are only one outlier with value of 5 and 1. From the 'mtext' function, I can detected most of the outliers has the value of 2.
+
+>2. Do ratings depend on the cocoa percentage of a chocolate bar?
+
+Answer: Most chocolate bars appear to have a cocoa percentage ranging between 70% and 80%. The average cocoa content is 71.7 percent, with values ranging from 42 percent to 100 percent. We can easily observe that the majority of the passable to commendable chocolate bars included 70-79 percent cacao. Some bars with a greater cacao percentage fell into the unpleasant and unsatisfactory categories ( shows via rating). In short, we can tell ratings somehow depend on the cocoa percentage of a chocolate bar. 
+```{r, include = TRUE}
+
+# Histogram of Cocoa Content
+ggplot(data = df, aes(x = Cocoa.Pct)) +
+  geom_histogram(bins = 25, alpha = 0.95) + # set number of bins to 20
+  theme_light() + # Use a custome theme
+  coord_cartesian(expand = FALSE, ylim = c(0, 750)) +
+  labs(x = "Cocoa Percentage (%)", 
+       y = "Count",
+       title = "Distribution of Cocoa Percentage")
+```
+
+```{r, include = TRUE}
+options(repr.plot.width=5, repr.plot.height=7)
+df <- mutate(df, Cocoa.Pct)
+df$Cocoa.Pct[df$Cocoa.Pct >=40 & df$Cocoa.Pct < 50] <- '40-49Pct'
+df$Cocoa.Pct[df$Cocoa.Pct >=50 & df$Cocoa.Pct < 60] <- '50-59Pct'
+df$Cocoa.Pct[df$Cocoa.Pct >=60 & df$Cocoa.Pct < 70] <- '60-69Pct'
+df$Cocoa.Pct[df$Cocoa.Pct >=70 & df$Cocoa.Pct < 80] <- '70-79Pct'
+df$Cocoa.Pct[df$Cocoa.Pct >=80 & df$Cocoa.Pct < 90] <- '80-89Pct'
+df$Cocoa.Pct[df$Cocoa.Pct >=90 & df$Cocoa.Pct <= 99] <- '90-99Pct'
+df$Cocoa.Pct[df$Cocoa.Pct== 100] <- '100Pct'
+
+df$Cocoa.Pct <- factor(df$Cocoa.Pct, levels = c("40-49Pct", "50-59Pct", "60-69Pct","70-79Pct", "80-89Pct", "90-99Pct","100Pct"))
+
+ggplot(df ,aes(x =Rating, fill =Cocoa.Pct )) + 
+geom_bar(size = 0.2) + xlab("Rating") + scale_fill_brewer(palette="Blues")+
+theme_few()
+```
+
+>3. How do ratings compare across different company locations? Focus on the three locations with the most ratings:
+
+```{r}
+# filter 3 top 3 countries
+top3 <- dplyr::filter(df, Company.Location %in% c("U.S.A.", "France", "Canada"))
+
+# grading set up
+# Instead of use the rating's values, I will group them into 5 groups. 
+top3 <- mutate(top3, rating_group = Rating)
+  
+top3$rating_group[top3$rating_group >=1 & top3$rating_group < 2] <- "Unpleasant"
+top3$rating_group[top3$rating_group >=2 & top3$rating_group < 3] <- "Disappointing"
+top3$rating_group[top3$rating_group >=3 & top3$rating_group <= 3.75] <- "Satisfactory to praiseworthy"
+
+top3$rating_group[top3$rating_group == 4] <- "Premium"
+top3$rating_group[top3$rating_group == 5] <- "Elite"
+top3$rating_group <- factor(top3$rating_group, levels = c("Unpleasant", "Disappointing", "Satisfactory to praiseworthy","Premium", "Elite"))
+
+# graph to show rating compare arcoss USA, France and Canada
+options(repr.plot.width=10, repr.plot.height=10)
+top3$rating_group = factor(top3$rating_group,levels=c("Unpleasant", "Disappointing", "Satisfactory to praiseworthy","Premium", "Elite"),ordered=TRUE)
+top3 %>% group_by(Company.Location, rating_group) %>% summarise(Count = length(rating_group))%>%
+ggplot(aes(x =Company.Location, y =Count, fill = rating_group)) +
+geom_bar(position = 'fill',stat = "identity", aes(color = I('black')), size = 0.1) +scale_fill_brewer(palette="Blues")+ xlab("Countries") + ylab("Number of Bars(%)")
+```
+
+From the graph above, we can see that USA, CANADA and FRANCE chocolate companies do not have any Elite level(rate = 5). On the other hand, France companies has highest "Premium" rate among 3 countries but also the only country has the "Unpleasant" percentage of rate. These are main ratings compare that I focus on from the graph.
+
+> __Own Question__: 
+- Answer
+- graph
+- Workflow
+
