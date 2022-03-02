@@ -129,9 +129,13 @@ geom_bar(position = 'fill',stat = "identity", aes(color = I('black')), size = 0.
 
 From the graph above, we can see that USA, CANADA and FRANCE chocolate companies do not have any Elite level(rate = 5). On the other hand, France companies has highest "Premium" rate among 3 countries but also the only country has the "Unpleasant" percentage of rate. These are main ratings compare that I focus on from the graph.
 
-> __Own Question__: 
+> __Own Question__: What's the most popular bean type?
 
-- Answer
-- graph
-- Workflow
+Answer: There is one kind of bean the chocolate bar has close to 50% is unknown. The 2nd place is the Trinitario (20%)
+```{r}
+df %>% group_by(Bean.Type) %>% summarise(Count= n())%>% mutate(pct=Count/sum(Count)) %>% top_n(15, wt = pct)%>%
+ggplot(aes(x =reorder(Bean.Type,pct), y =pct, fill = pct)) + geom_bar(stat = "identity", fill = "blue", aes(color = I('black')), size = 0.1) + coord_flip()+ xlab("Bean Type") +ylab("Percentage")
+```
+
+- Workflow: I group the bean type together using pipe. Then calculate the pct (percentage) by number of count divided by sum of total count. Then use the ggplot2 to display the result. 
 
